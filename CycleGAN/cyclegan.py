@@ -1,7 +1,6 @@
 from __future__ import print_function, division
 import scipy
 
-from keras.datasets import mnist
 from keras_contrib.layers.normalization import InstanceNormalization
 from keras.layers import Input, Dense, Reshape, Flatten, Dropout, Concatenate
 from keras.layers import BatchNormalization, Activation, ZeroPadding2D
@@ -15,6 +14,8 @@ import sys
 from data_loader import DataLoader
 import numpy as np
 import os
+import tensorflow as tf
+import keras
 
 class CycleGAN():
     def __init__(self):
@@ -25,7 +26,7 @@ class CycleGAN():
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
 
         # Configure data loader
-        self.dataset_name = 'apple2orange'
+        self.dataset_name = 'monet2photo'
         self.data_loader = DataLoader(dataset_name=self.dataset_name,
                                       img_res=(self.img_rows, self.img_cols))
 
@@ -240,5 +241,10 @@ class CycleGAN():
 
 
 if __name__ == '__main__':
+    sess = tf.Session(config=tf.ConfigProto(
+        allow_soft_placement=True, log_device_placement=True))
+
+    keras.backend.set_session(sess)
+
     gan = CycleGAN()
     gan.train(epochs=30000, batch_size=2, save_interval=200)
