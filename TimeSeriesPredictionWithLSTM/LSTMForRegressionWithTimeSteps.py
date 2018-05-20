@@ -1,23 +1,29 @@
-import pandas 
+# LSTM for international airline passengers problem with time step regression framing 
 import numpy 
 import matplotlib.pyplot as plt 
+from pandas import read_csv 
 import math 
 from keras.models import Sequential 
-from keras.layers import Dense 
+from keras.layers import Dense
 from keras.layers import LSTM 
-from sklearn.preprocessing import MinMaxScaler 
-from sklearn.metrics import mean_squared_error 
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import mean_squared_error
 
-# fix random seed for reproducitbility 
+# convert an array of values into a dataset matrix 
+def create_dataset(dataset, look_back=1):
+    dataX, dataY = [], []
+    for i in range(len(dataset) - look_back - 1):
+        a = dataset[i:(i+look_back), 0]
+        dataX.append(a)
+        dataY.append(dataset[i + look_back, 0])
+    return numpy.array(dataX), numpy.array(dataY)
+
+# fix random seed for reproducibility 
 numpy.random.seed(7)
-
-dataset = pandas.read_csv('international-airline-passengers.csv', usecols=[1], engine='python', skipfooter=3)
-plt.plot(dataset)
-# plt.show()
-
-dataset = dataset.values 
+# load the dataset 
+dataframe = read_csv('international-airline-passengers.csv', usecols=[1], engine='python', skipfooter=3)
+dataset = dataframe.values 
 dataset = dataset.astype('float32')
-
 # normalize the dataset 
 scaler = MinMaxScaler(feature_range=(0, 1))
 dataset = scaler.fit_transform(dataset)
@@ -25,37 +31,35 @@ dataset = scaler.fit_transform(dataset)
 # split into train and test sets 
 train_size = int(len(dataset) * 0.67)
 test_size = len(dataset) - train_size
-train, test = dataset[0:train_size, :], dataset[train_size:len(dataset),:]
-print(len(train), len(test))
-
-# convert an array of values into a dataset matrix 
-def cretae_dataset(dataset, look_back=1):
-    dataX, dataY = [], [] 
-    for i in range(len(dataset) - look_back - 1):
-        a = dataset[i:(i+look_back), 0]
-        dataX.append(a)
-        dataY.append(dataset[i + look_back, 0])
-    return numpy.array(dataX), numpy.array(dataY)
-
-
-# reshape into X=t and Y=t+1 
-look_back = 1 
-trainX, trainY = cretae_dataset(train, look_back)
-testX, testY = cretae_dataset(test, look_back)
-
+train, test = dataset[0:train_size,:], dataset[train_size:len(dataset), :]
+# reshape into x=t and Y=t+1 
+look_back = 3 
+trainX, trainY = create_dataset(train, look_back=look_back)
+testX, testY = create_dataset(test, look_back=look_back)
 # reshape input to be [samples, time steps, features]
 print(trainX)
-trainX = numpy.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
-print("---------------")
+trainX = numpy.reshape(trainX, (trainX.shape[0], trainX.shape[1], 1))
+print("------------------------")
 print(trainX)
-testX = numpy.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
-
+testX = numpy.reshape(testX, (testX.shape[0], testX.shape[1], 1))
 # create and fit the LSTM network 
 model = Sequential() 
-model.add(LSTM(4, input_shape=(1, look_back)))
+model.add(LSTM(4, input_shape=(look_back, 1)))
 model.add(Dense(1))
-model.compile(loss='mean_squared_error', optimizer='adam')
-model.fit(trainX, trainY, epochs=100, batch_size=1, verbose=2)
+model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
+history = model.fit(trainX, trainY, epochs=100, batch_size=1, verbose=2)
+
+plt.plot(history.history['acc'])
+plt.xlabel('epoch')
+plt.ylabel('accuracy')
+plt.title('Model Accuracy')
+plt.show()
+
+plt.plot(history.history['loss'])
+plt.xlabel('epoch')
+plt.ylabel('Loss')
+plt.title('Model Loss')
+plt.show()
 
 # make predictions
 trainPredict = model.predict(trainX)
@@ -83,3 +87,5 @@ plt.plot(scaler.inverse_transform(dataset))
 plt.plot(trainPredictPlot)
 plt.plot(testPredictPlot)
 plt.show()
+
+
