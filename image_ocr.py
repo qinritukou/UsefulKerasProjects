@@ -98,7 +98,7 @@ def paint_text(text, w, h, rotate=False, ud=False, multi_fonts=False):
         if ud:
             top_left_x = np.random.randint(0, int(max_shift_y))
         else:
-            top_left_y = h // 2
+            top_left_x = h // 2
         context.move_to(top_left_x - int(box[0]), top_left_x - int(box[1]))
         context.set_source_rgb(0, 0, 0)
         context.show_text(text)
@@ -115,7 +115,7 @@ def paint_text(text, w, h, rotate=False, ud=False, multi_fonts=False):
     return a 
 
 def shuffle_mats_or_lists(matrix_list, stop_ind=None):
-    rets = []
+    ret = []
     assert all([len(i) == len(matrix_list[0]) for i in matrix_list])    
     len_val = len(matrix_list[0])
     if stop_ind is None:
@@ -462,7 +462,7 @@ def train(run_name, start_epoch, stop_epoch, img_w):
     # the loss calc occurs elsewhere, so use a dummy lambda func for the loss 
     model.compile(loss={'ctc': lambda y_true, y_pred: y_pred}, optimizer=sgd)
     if start_epoch > 0:
-        weight_file = os.path.join(OUTPUT_DIR, os.path.join(run_name, "weights_%02.h5" % (start_epoch - 1)))
+        weight_file = os.path.join(OUTPUT_DIR, os.path.join(run_name, "weights_%02d.h5" % (start_epoch - 1)))
         model.load_weights(weight_file)
     # captures output of softmax so we can decode the output during visualization 
     test_func = K.function([input_data], [y_pred])
@@ -478,8 +478,8 @@ def train(run_name, start_epoch, stop_epoch, img_w):
                                     initial_epoch=start_epoch)
 
 if __name__ == '__main__':
-    run_name = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    train(run_name, 0, 20, 128)
+    run_name = datetime.datetime.now().strftime('%Y-%m-%d')
+    train(run_name, 0, 50, 128)
     # increase to wider images and start at epoch 20. The learned weights are reloaded
-    train(run_name, 20, 25, 512)
+    # train(run_name, 20, 25, 512)
 
